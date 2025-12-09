@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Robot Cloud Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #222; color: #fff; }
+        .dashboard { display: flex; justify-content: center; gap: 20px; margin: 20px; }
+        .card { background: #333; padding: 20px; border-radius: 10px; min-width: 150px; }
+        .btn-grid { display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; justify-content: center; margin: 20px; }
+        button { width: 60px; height: 60px; font-size: 24px; cursor: pointer; border-radius: 8px; border: none; }
+        .stop { background: red; color: white; }
+        h1 { color: #00ffcc; }
+    </style>
+</head>
+<body>
+    <h1>🛸 CLOUD CONTROL CENTER</h1>
+    
+    <div class="dashboard">
+        <div class="card">
+            <h3>Khoảng Cách</h3>
+            <h2 id="distVal">--</h2> cm
+        </div>
+        <div class="card">
+            <h3>Tốc Độ</h3>
+            <h2 id="speedVal">--</h2> PWM
+        </div>
+    </div>
+
+    <div class="btn-grid">
+        <button onmousedown="send('K')" onmouseup="send('S')">↖</button>
+        <button onmousedown="send('F')" onmouseup="send('S')">↑</button>
+        <button onmousedown="send('Q')" onmouseup="send('S')">↗</button>
+        <button onmousedown="send('L')" onmouseup="send('S')">↺</button>
+        <button class="stop" onmousedown="send('S')">S</button>
+        <button onmousedown="send('R')" onmouseup="send('S')">↻</button>
+        <button onmousedown="send('H')" onmouseup="send('S')">↙</button>
+        <button onmousedown="send('B')" onmouseup="send('S')">↓</button>
+        <button onmousedown="send('J')" onmouseup="send('S')">↘</button>
+    </div>
+    
+    <input type="range" min="60" max="255" value="150" onchange="sendSpeed(this.value)">
+
+    <script>
+        const socket = io();
+
+        // Nhận dữ liệu cập nhật
+        socket.on('sensor_update', (data) => {
+            document.getElementById('distVal').innerText = data.khoang_cach;
+            document.getElementById('speedVal').innerText = data.toc_do;
+        });
+
+        // Gửi lệnh
+        function send(cmd) { socket.emit('control_cmd', cmd); }
+        function sendSpeed(val) { socket.emit('speed_cmd', val); }
+    </script>
+</body>
+</html>
