@@ -1,60 +1,300 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Robot Cloud Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #222; color: #fff; }
-        .dashboard { display: flex; justify-content: center; gap: 20px; margin: 20px; }
-        .card { background: #333; padding: 20px; border-radius: 10px; min-width: 150px; }
-        .btn-grid { display: grid; grid-template-columns: repeat(3, 60px); gap: 10px; justify-content: center; margin: 20px; }
-        button { width: 60px; height: 60px; font-size: 24px; cursor: pointer; border-radius: 8px; border: none; }
-        .stop { background: red; color: white; }
-        h1 { color: #00ffcc; }
+      /* --- CẤU HÌNH CƠ BẢN --- */
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        text-align: center;
+        background: #1a1a1a;
+        color: #ecf0f1;
+        margin: 0;
+        padding-bottom: 50px;
+      }
+      h1 {
+        color: #00ffcc;
+        margin-top: 20px;
+        text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+      }
+
+      /* --- DASHBOARD THẺ SỐ --- */
+      .dashboard {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin: 20px;
+        flex-wrap: wrap;
+      }
+      .card {
+        background: #2d2d2d;
+        padding: 20px;
+        border-radius: 15px;
+        min-width: 140px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        border: 1px solid #444;
+      }
+      .card h3 {
+        margin: 0;
+        color: #aaa;
+        font-size: 14px;
+      }
+      .card h2 {
+        margin: 10px 0 0;
+        font-size: 36px;
+      }
+
+      /* --- BẢNG ĐIỀU KHIỂN (GRID) --- */
+      .btn-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 70px);
+        gap: 15px;
+        justify-content: center;
+        margin: 30px auto;
+      }
+
+      /* --- NÚT BẤM (CÓ HIỆU ỨNG) --- */
+      button {
+        width: 70px;
+        height: 70px;
+        font-size: 28px;
+        cursor: pointer;
+        border-radius: 12px;
+        border: none;
+        background: #444;
+        color: white;
+        box-shadow: 0 4px 0 #222; /* Tạo độ nổi 3D */
+        transition: all 0.1s; /* Hiệu ứng mượt */
+        user-select: none; /* Chống bôi đen khi nhấn giữ */
+      }
+
+      /* Hiệu ứng khi nhấn giữ (Active) */
+      button:active {
+        background-color: #00ffcc; /* Đổi màu sáng khi nhấn */
+        color: #000;
+        box-shadow: 0 0 0 #222; /* Mất độ nổi */
+        transform: translateY(4px); /* Nút lún xuống */
+      }
+
+      /* Nút Stop riêng biệt */
+      .stop {
+        background: #e74c3c;
+        box-shadow: 0 4px 0 #c0392b;
+      }
+      .stop:active {
+        background: #ff0000;
+        box-shadow: 0 0 0 #c0392b;
+      }
+
+      /* --- SLIDER TỐC ĐỘ --- */
+      input[type="range"] {
+        width: 80%;
+        max-width: 300px;
+        margin: 20px 0;
+        accent-color: #00ffcc;
+      }
+
+      /* --- BIỂU ĐỒ (CHART) --- */
+      .chart-container {
+        width: 90%;
+        max-width: 600px;
+        margin: 30px auto;
+        background: #2d2d2d;
+        padding: 15px;
+        border-radius: 15px;
+        border: 1px solid #444;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <h1>🛸 CLOUD CONTROL CENTER</h1>
-    
+
     <div class="dashboard">
-        <div class="card">
-            <h3>Khoảng Cách</h3>
-            <h2 id="distVal">--</h2> cm
-        </div>
-        <div class="card">
-            <h3>Tốc Độ</h3>
-            <h2 id="speedVal">--</h2> PWM
-        </div>
+      <div class="card">
+        <h3>KHOẢNG CÁCH</h3>
+        <h2 id="distVal" style="color: #00ffcc">--</h2>
+        <small>cm</small>
+      </div>
+      <div class="card">
+        <h3>TỐC ĐỘ</h3>
+        <h2 id="speedVal" style="color: #ff9f43">--</h2>
+        <small>PWM</small>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <canvas id="robotChart"></canvas>
     </div>
 
     <div class="btn-grid">
-        <button onmousedown="send('K')" onmouseup="send('S')">↖</button>
-        <button onmousedown="send('F')" onmouseup="send('S')">↑</button>
-        <button onmousedown="send('Q')" onmouseup="send('S')">↗</button>
-        <button onmousedown="send('L')" onmouseup="send('S')">↺</button>
-        <button class="stop" onmousedown="send('S')">S</button>
-        <button onmousedown="send('R')" onmouseup="send('S')">↻</button>
-        <button onmousedown="send('H')" onmouseup="send('S')">↙</button>
-        <button onmousedown="send('B')" onmouseup="send('S')">↓</button>
-        <button onmousedown="send('J')" onmouseup="send('S')">↘</button>
+      <button
+        onmousedown="send('K')"
+        onmouseup="send('S')"
+        ontouchstart="send('K')"
+        ontouchend="send('S')"
+      >
+        ↖
+      </button>
+      <button
+        onmousedown="send('F')"
+        onmouseup="send('S')"
+        ontouchstart="send('F')"
+        ontouchend="send('S')"
+      >
+        ↑
+      </button>
+      <button
+        onmousedown="send('Q')"
+        onmouseup="send('S')"
+        ontouchstart="send('Q')"
+        ontouchend="send('S')"
+      >
+        ↗
+      </button>
+
+      <button
+        onmousedown="send('L')"
+        onmouseup="send('S')"
+        ontouchstart="send('L')"
+        ontouchend="send('S')"
+      >
+        ↺
+      </button>
+      <button class="stop" onmousedown="send('S')">S</button>
+      <button
+        onmousedown="send('R')"
+        onmouseup="send('S')"
+        ontouchstart="send('R')"
+        ontouchend="send('S')"
+      >
+        ↻
+      </button>
+
+      <button
+        onmousedown="send('H')"
+        onmouseup="send('S')"
+        ontouchstart="send('H')"
+        ontouchend="send('S')"
+      >
+        ↙
+      </button>
+      <button
+        onmousedown="send('B')"
+        onmouseup="send('S')"
+        ontouchstart="send('B')"
+        ontouchend="send('S')"
+      >
+        ↓
+      </button>
+      <button
+        onmousedown="send('J')"
+        onmouseup="send('S')"
+        ontouchstart="send('J')"
+        ontouchend="send('S')"
+      >
+        ↘
+      </button>
     </div>
-    
-    <input type="range" min="60" max="255" value="150" onchange="sendSpeed(this.value)">
+
+    <label>Điều chỉnh tốc độ cơ bản:</label><br />
+    <input
+      type="range"
+      min="60"
+      max="255"
+      value="150"
+      onchange="sendSpeed(this.value)"
+    />
 
     <script>
-        const socket = io();
+      const socket = io();
 
-        // Nhận dữ liệu cập nhật
-        socket.on('sensor_update', (data) => {
-            document.getElementById('distVal').innerText = data.khoang_cach;
-            document.getElementById('speedVal').innerText = data.toc_do;
+      // --- 1. CẤU HÌNH BIỂU ĐỒ (CHART.JS) ---
+      const ctx = document.getElementById("robotChart").getContext("2d");
+      const robotChart = new Chart(ctx, {
+        type: "line", // Dạng biểu đồ đường
+        data: {
+          labels: [], // Nhãn thời gian (trục ngang)
+          datasets: [
+            {
+              label: "Khoảng cách (cm)",
+              borderColor: "#00ffcc",
+              backgroundColor: "rgba(0, 255, 204, 0.2)",
+              data: [],
+              tension: 0.4, // Làm mềm đường cong
+              fill: true,
+            },
+            {
+              label: "Tốc độ (PWM)",
+              borderColor: "#ff9f43",
+              backgroundColor: "rgba(255, 159, 67, 0.0)",
+              data: [],
+              tension: 0.4,
+              borderDash: [5, 5], // Đường nét đứt cho tốc độ
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          interaction: {
+            mode: "index",
+            intersect: false, // Rê chuột vào là thấy thông số
+          },
+          scales: {
+            x: { ticks: { color: "#aaa" } },
+            y: { ticks: { color: "#aaa" }, beginAtZero: true },
+          },
+          plugins: {
+            legend: { labels: { color: "#fff" } },
+          },
+        },
+      });
+
+      // --- 2. NHẬN DỮ LIỆU TỪ SERVER ---
+      socket.on("sensor_update", (data) => {
+        // Cập nhật số hiển thị
+        document.getElementById("distVal").innerText = data.khoang_cach;
+        document.getElementById("speedVal").innerText = data.toc_do;
+
+        // Cập nhật Biểu đồ
+        updateChart(data.khoang_cach, data.toc_do);
+      });
+
+      // Hàm cập nhật biểu đồ (Giữ lại 20 điểm dữ liệu mới nhất)
+      function updateChart(dist, speed) {
+        const now = new Date().toLocaleTimeString(); // Lấy giờ hiện tại
+
+        // Thêm dữ liệu mới
+        robotChart.data.labels.push(now);
+        robotChart.data.datasets[0].data.push(dist);
+        robotChart.data.datasets[1].data.push(speed);
+
+        // Xóa dữ liệu cũ nếu quá dài (để biểu đồ chạy mượt)
+        if (robotChart.data.labels.length > 20) {
+          robotChart.data.labels.shift();
+          robotChart.data.datasets[0].data.shift();
+          robotChart.data.datasets[1].data.shift();
+        }
+
+        robotChart.update(); // Vẽ lại
+      }
+
+      // --- 3. GỬI LỆNH ---
+      function send(cmd) {
+        socket.emit("control_cmd", cmd);
+      }
+      function sendSpeed(val) {
+        socket.emit("speed_cmd", val);
+      }
+
+      // Hỗ trợ cảm ứng điện thoại tốt hơn (ngăn kéo trang khi bấm nút)
+      document.querySelectorAll("button").forEach((btn) => {
+        btn.addEventListener("touchstart", (e) => {
+          e.preventDefault();
         });
-
-        // Gửi lệnh
-        function send(cmd) { socket.emit('control_cmd', cmd); }
-        function sendSpeed(val) { socket.emit('speed_cmd', val); }
+      });
     </script>
-</body>
+  </body>
 </html>
