@@ -52,58 +52,45 @@
         font-size: 24px;
       }
 
-      /* --- LAYOUT LƯỚI THÔNG MINH (SMART GRID) --- */
+      /* --- LAYOUT LƯỚI --- */
       .main-grid {
         display: grid;
-        /* Cột trái 350px, Cột phải phần còn lại */
         grid-template-columns: 350px 1fr;
-        /* Dòng tự động co giãn theo nội dung */
         grid-template-rows: auto auto 1fr;
         gap: 20px;
         max-width: 1400px;
         margin: 0 auto;
       }
 
-      /* --- ĐỊNH VỊ VỊ TRÍ CÁC PANEL --- */
-
-      /* 1. Trạng thái kết nối (Cột 1, Dòng 1) */
+      /* Định vị Panel */
       .area-status {
         grid-column: 1;
         grid-row: 1;
       }
-
-      /* 2. Giám sát tự hành (Cột 1, Dòng 2) */
       .area-auto {
         grid-column: 1;
         grid-row: 2;
       }
-
-      /* 3. Điều khiển thủ công (Cột 1, Dòng 3) */
       .area-manual {
         grid-column: 1;
         grid-row: 3;
         height: 100%;
       }
-
-      /* 4. BIỂU ĐỒ (Cột 2, CHIẾM DÒNG 1 VÀ 2) -> Giải quyết yêu cầu 1 */
       .area-chart {
         grid-column: 2;
-        grid-row: 1 / span 2; /* Chiếm từ dòng 1 và kéo dài 2 dòng */
-        height: 100%; /* Kéo giãn chiều cao cho bằng cột trái */
+        grid-row: 1 / span 2;
+        height: 100%;
         display: flex;
         flex-direction: column;
       }
-
-      /* 5. LỊCH SỬ (Cột 2, Dòng 3) -> Giải quyết yêu cầu 2 (Nằm ngang hàng Manual) */
       .area-history {
         grid-column: 2;
         grid-row: 3;
-        height: 100%; /* Kéo giãn chiều cao bằng với Manual bên cạnh */
+        height: 100%;
         display: flex;
         flex-direction: column;
       }
 
-      /* Responsive Mobile: Chuyển về 1 cột dọc */
       @media (max-width: 900px) {
         .main-grid {
           grid-template-columns: 1fr;
@@ -137,7 +124,7 @@
         border-bottom: 1px solid var(--border-color);
       }
 
-      /* CSS CÁC THÀNH PHẦN CON (Giữ nguyên style đẹp cũ) */
+      /* Components */
       .status-box {
         display: flex;
         justify-content: space-between;
@@ -244,6 +231,7 @@
         color: var(--accent-orange);
       }
 
+      /* Controller Styles */
       .d-pad-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -303,15 +291,13 @@
         border: 3px solid #222;
       }
 
-      /* BIỂU ĐỒ FULL CHIỀU CAO */
+      /* Chart & History */
       .chart-container {
         flex: 1;
         position: relative;
         min-height: 300px;
         width: 100%;
       }
-
-      /* LỊCH SỬ FULL CHIỀU CAO */
       .history-filter {
         display: flex;
         gap: 10px;
@@ -343,6 +329,7 @@
         cursor: pointer;
         height: 35px;
       }
+
       .table-wrapper {
         flex: 1;
         overflow-y: auto;
@@ -372,15 +359,38 @@
         background: #2c2c2c;
       }
 
-      ::-webkit-scrollbar {
-        width: 6px;
+      /* --- [MỚI] THANH PHÂN TRANG --- */
+      .pagination-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 15px;
+        padding: 10px;
+        background: #252525;
+        border-radius: 8px;
+        border: 1px solid #333;
       }
-      ::-webkit-scrollbar-track {
-        background: #1e1e1e;
+      .page-btn {
+        background: #333;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: 0.2s;
       }
-      ::-webkit-scrollbar-thumb {
-        background: #444;
-        border-radius: 3px;
+      .page-btn:hover:not(:disabled) {
+        background: var(--accent-cyan);
+        color: black;
+      }
+      .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .page-info {
+        color: var(--text-sub);
+        font-weight: bold;
       }
     </style>
   </head>
@@ -574,6 +584,7 @@
           </div>
           <button class="btn-view" onclick="loadHistory()">Xem Báo Cáo</button>
         </div>
+
         <div class="table-wrapper">
           <table id="historyTable">
             <thead>
@@ -597,12 +608,31 @@
             </tbody>
           </table>
         </div>
+
+        <div
+          class="pagination-controls"
+          id="paginationControls"
+          style="display: none"
+        >
+          <button class="page-btn" id="prevPageBtn" onclick="changePage(-1)">
+            <i class="fas fa-chevron-left"></i> Trước
+          </button>
+          <span class="page-info" id="pageInfo">Trang 1 / 5</span>
+          <button class="page-btn" id="nextPageBtn" onclick="changePage(1)">
+            Sau <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
       </div>
     </div>
 
     <script>
       const socket = io();
       let lastHeartbeat = 0;
+
+      // --- BIẾN QUẢN LÝ PHÂN TRANG ---
+      let globalHistoryData = []; // Lưu toàn bộ dữ liệu tải về
+      let currentPage = 1;
+      const ITEMS_PER_PAGE = 100; // Số dòng mỗi trang
 
       function setOnlineStatus(isOnline) {
         const statusBox = document.getElementById("connectionStatus");
@@ -638,7 +668,6 @@
       function sendSpeed(val) {
         socket.emit("speed_cmd", val);
       }
-
       function toggleAutoMode(checkbox) {
         const actionBox = document.getElementById("robotAction");
         if (checkbox.checked) {
@@ -653,6 +682,7 @@
         }
       }
 
+      // --- CHART CONFIG ---
       const ctx = document.getElementById("robotChart").getContext("2d");
       Chart.defaults.color = "#7f8c8d";
       Chart.defaults.borderColor = "#333";
@@ -662,7 +692,7 @@
           labels: [],
           datasets: [
             {
-              label: "Khoảng cách",
+              label: "KC",
               borderColor: "#00ffcc",
               backgroundColor: "rgba(0, 255, 204, 0.1)",
               data: [],
@@ -692,7 +722,6 @@
           },
         },
       });
-
       function updateChart(dist, speed) {
         const now = new Date().toLocaleTimeString();
         robotChart.data.labels.push(now);
@@ -722,47 +751,65 @@
         document.getElementById("startTime").value = startStr;
       };
 
+      // --- [PHẦN XỬ LÝ LỊCH SỬ & PHÂN TRANG MỚI] ---
+
       function loadHistory() {
         const startVal = document.getElementById("startTime").value;
         const endVal = document.getElementById("endTime").value;
-
-        // 2. Kiểm tra xem người dùng đã chọn giờ chưa
         if (!startVal || !endVal) {
-          alert("Vui lòng chọn đầy đủ thời gian bắt đầu và kết thúc!");
+          alert("Vui lòng chọn đầy đủ thời gian!");
           return;
         }
 
-        // 3. Hiển thị thông báo "Đang tải..." lên bảng
-        const tbody = document
+        // Reset UI
+        document
           .getElementById("historyTable")
-          .querySelector("tbody");
-        tbody.innerHTML =
-          '<tr><td colspan="4" align="center" style="padding:20px; color: #00ffcc;">Đang tải dữ liệu từ Cloud... <i class="fas fa-spinner fa-spin"></i></td></tr>';
+          .querySelector("tbody").innerHTML =
+          '<tr><td colspan="4" align="center" style="padding:20px; color: #00ffcc;">Đang tải... <i class="fas fa-spinner fa-spin"></i></td></tr>';
+        document.getElementById("paginationControls").style.display = "none";
 
-        // 4. --- BƯỚC QUAN TRỌNG: CHUYỂN ĐỔI SANG UTC ---
-        // MongoDB lưu giờ UTC (GMT+0), nên ta cần đổi giờ VN (GMT+7) sang UTC trước khi gửi
         const startDate = new Date(startVal).toISOString();
         const endDate = new Date(endVal).toISOString();
-
-        // Debug: In ra Console để kiểm tra (F12)
-        console.log(`Tìm kiếm (Local - VN): ${startVal} -> ${endVal}`);
-        console.log(`Tìm kiếm (Server - UTC): ${startDate} -> ${endDate}`);
-
-        // 5. Gửi yêu cầu lên Server
         socket.emit("get_history", { startTime: startDate, endTime: endDate });
       }
 
       socket.on("history_data_result", (historyArray) => {
+        // 1. Lưu dữ liệu vào biến toàn cục
+        globalHistoryData = historyArray || [];
+
+        // 2. Reset về trang 1
+        currentPage = 1;
+
+        if (globalHistoryData.length === 0) {
+          document
+            .getElementById("historyTable")
+            .querySelector("tbody").innerHTML =
+            '<tr><td colspan="4" align="center">Không có dữ liệu.</td></tr>';
+          return;
+        }
+
+        // 3. Hiển thị trang đầu tiên
+        renderTable(currentPage);
+
+        // 4. Hiển thị thanh điều khiển nếu có nhiều hơn 1 trang
+        if (globalHistoryData.length > ITEMS_PER_PAGE) {
+          document.getElementById("paginationControls").style.display = "flex";
+        }
+      });
+
+      // Hàm vẽ bảng theo trang
+      function renderTable(page) {
         const tbody = document
           .getElementById("historyTable")
           .querySelector("tbody");
         tbody.innerHTML = "";
-        if (!historyArray || historyArray.length === 0) {
-          tbody.innerHTML =
-            '<tr><td colspan="4" align="center">Không có dữ liệu.</td></tr>';
-          return;
-        }
-        historyArray.forEach((item) => {
+
+        // Tính toán vị trí cắt dữ liệu
+        const startIndex = (page - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const pageData = globalHistoryData.slice(startIndex, endIndex);
+
+        pageData.forEach((item) => {
           const row = document.createElement("tr");
           let timeStr = item.timestamp
             ? new Date(item.timestamp).toLocaleString("vi-VN")
@@ -773,7 +820,28 @@
           row.innerHTML = `<td style="color:#00ffcc">${timeStr}</td><td><b>${item.khoang_cach}</b></td><td>${item.toc_do}</td><td style="color:#aaa">${statusHint}</td>`;
           tbody.appendChild(row);
         });
-      });
+
+        // Cập nhật thông tin trang
+        const totalPages = Math.ceil(globalHistoryData.length / ITEMS_PER_PAGE);
+        document.getElementById(
+          "pageInfo"
+        ).innerText = `Trang ${page} / ${totalPages} (Tổng: ${globalHistoryData.length})`;
+
+        // Cập nhật trạng thái nút bấm
+        document.getElementById("prevPageBtn").disabled = page === 1;
+        document.getElementById("nextPageBtn").disabled = page === totalPages;
+      }
+
+      // Hàm chuyển trang
+      function changePage(direction) {
+        const totalPages = Math.ceil(globalHistoryData.length / ITEMS_PER_PAGE);
+        const newPage = currentPage + direction;
+
+        if (newPage >= 1 && newPage <= totalPages) {
+          currentPage = newPage;
+          renderTable(currentPage);
+        }
+      }
 
       document.querySelectorAll(".btn-ctrl").forEach((btn) => {
         btn.addEventListener("touchstart", (e) => e.preventDefault(), {
