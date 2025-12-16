@@ -90,24 +90,24 @@ void execute(char cmd) {
     case 'R': go(1,0, 0,1, 1,0, 0,1); break; // Xoay Phải: Trái tiến, Phải lùi
 
     // 3. ĐI NGANG (Slide / Strafe)
-    // Sang Trái (Left): Trái Trước lùi, Phải Trước tiến, Trái Sau tiến, Phải Sau lùi
-    case 'G': go(0,1, 1,0, 1,0, 0,1); break; 
+    // Sang Phải (Left): Trái Trước lùi, Phải Trước tiến, Trái Sau tiến, Phải Sau lùi
+    case 'I': go(0,1, 1,0, 1,0, 0,1); break; 
     
-    // Sang Phải (Right): Trái Trước tiến, Phải Trước lùi, Trái Sau lùi, Phải Sau tiến
-    case 'I': go(1,0, 0,1, 0,1, 1,0); break; 
+    // Sang Trái (Right): Trái Trước tiến, Phải Trước lùi, Trái Sau lùi, Phải Sau tiến
+    case 'G': go(1,0, 0,1, 0,1, 1,0); break; 
 
     // 4. ĐI CHÉO (Diagonal) - Nguyên tắc: Chỉ 2 bánh chéo nhau chạy
-    // Chéo Tiến Trái (Forward-Left): Phải Trước + Trái Sau chạy tiến
-    case 'K': go(0,0, 1,0, 1,0, 0,0); break; 
+    // Chéo Tiến Phải (Forward-Left): Phải Trước + Trái Sau chạy tiến
+    case 'Q': go(0,0, 1,0, 1,0, 0,0); break; 
 
-    // Chéo Tiến Phải (Forward-Right): Trái Trước + Phải Sau chạy tiến
-    case 'Q': go(1,0, 0,0, 0,0, 1,0); break; 
+    // Chéo Tiến Trái (Forward-Right): Trái Trước + Phải Sau chạy tiến
+    case 'K': go(1,0, 0,0, 0,0, 1,0); break; 
 
-    // Chéo Lùi Trái (Backward-Left): Trái Trước + Phải Sau chạy lùi
-    case 'H': go(0,1, 0,0, 0,0, 0,1); break; 
+    // Chéo Lùi Phải (Backward-Left): Trái Trước + Phải Sau chạy lùi
+    case 'J': go(0,1, 0,0, 0,0, 0,1); break; 
 
-    // Chéo Lùi Phải (Backward-Right): Phải Trước + Trái Sau chạy lùi
-    case 'J': go(0,0, 0,1, 0,1, 0,0); break; 
+    // Chéo Lùi Trái (Backward-Right): Phải Trước + Trái Sau chạy lùi
+    case 'H': go(0,0, 0,1, 0,1, 0,0); break; 
 
     // 5. KHÁC
     case 'S': stopRobot(); break;

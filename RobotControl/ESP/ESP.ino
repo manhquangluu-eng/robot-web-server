@@ -5,8 +5,8 @@
 #include <ArduinoJson.h>
 
 // ================= CẤU HÌNH MẠNG =================
-const char* ssid = "...";          // <--- Nhập tên WiFi
-const char* password = "manh2210"; // <--- Nhập pass WiFi
+const char* ssid = "3629";          // <--- Nhập tên WiFi
+const char* password = "999999999"; // <--- Nhập pass WiFi
 
 // HiveMQ Cloud
 const char* mqtt_server = "163f01d37e0d400d86666ab2d0034720.s1.eu.hivemq.cloud"; 
